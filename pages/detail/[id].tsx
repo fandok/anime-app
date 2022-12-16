@@ -1,24 +1,47 @@
-import { Breadcrumb, Skeleton, Tag, Typography } from "antd";
+import { Breadcrumb, Skeleton, Space, Tag, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { MAIN_API } from "../../constants";
 import fetcher from "../../helpers/fetcher";
 import styles from "../../styles/detail.module.css";
 import { DetailResponse } from "../../types";
 
-const Detail = () => {
+export async function getServerSideProps({
+  params,
+}: {
+  params: { id: string };
+}) {
+  // Fetch data from external API
+  console.log(params);
+  const res = await fetch(`${MAIN_API}/${params.id}`);
+  const data = await res.json();
+
+  // Pass data to the page via props
+  return { props: { data } };
+}
+
+const Detail = ({ data: serverData }: { data: DetailResponse }) => {
+  const { data: session } = useSession();
   const router = useRouter();
   const { id } = router.query;
 
+  useEffect(() => {
+    if (!session) {
+      router.push("/forbidden");
+    }
+  }, [router, session]);
+
   const { data, isLoading, isValidating } = useSWR<DetailResponse>(
-    id ? `${MAIN_API}/${id}` : null,
+    id && !serverData ? `${MAIN_API}/${id}` : null,
     fetcher
   );
 
-  const detailData = data?.data;
+  const detailData = serverData?.data || data?.data;
 
   return (
     <main className={styles.main}>
@@ -26,12 +49,15 @@ const Detail = () => {
         <Skeleton active paragraph={{ rows: 10 }} />
       ) : (
         <>
-          <Breadcrumb>
-            <Breadcrumb.Item>
-              <Link href="/">Home</Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>{detailData?.title}</Breadcrumb.Item>
-          </Breadcrumb>
+          <Space>
+            <Breadcrumb>
+              <Breadcrumb.Item>
+                <Link href="/">Home</Link>
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>{detailData?.title}</Breadcrumb.Item>
+            </Breadcrumb>
+            | {session && session?.user?.name}
+          </Space>
           <div className={styles.content}>
             <div>
               <Typography.Title>
