@@ -1,16 +1,27 @@
-import { Button, Col, Divider, Input, Row, Skeleton, Typography } from "antd";
+import {
+  Button,
+  Col,
+  Divider,
+  Input,
+  Row,
+  Skeleton,
+  Space,
+  Typography,
+} from "antd";
 import debounce from "lodash.debounce";
+import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import useSWRInfinite from "swr/infinite";
+
 import { MAIN_API } from "../constants";
 import fetcher from "../helpers/fetcher";
+import styles from "../styles/index.module.css";
 import { ListResponse } from "../types";
 
-import styles from "../styles/index.module.css";
-import Link from "next/link";
-
 const Home = () => {
+  const { data: session } = useSession();
   const [input, setInput] = useState("");
 
   const getKey = (pageIndex: number) => {
@@ -27,7 +38,19 @@ const Home = () => {
 
   return (
     <main className={styles.main}>
-      <Typography.Title>Amartha Anime App</Typography.Title>
+      <Space>
+        <Typography.Title>Amartha Anime App</Typography.Title>
+        {session ? (
+          <>
+            <Typography.Text>
+              Welcome back, {session?.user?.name}
+            </Typography.Text>
+            <Button onClick={() => signOut()}>Sign out</Button>
+          </>
+        ) : (
+          <Button onClick={() => signIn()}>Sign in</Button>
+        )}
+      </Space>
       <Input
         onChange={(e) => {
           handleInput(e.target.value);
@@ -39,7 +62,7 @@ const Home = () => {
         {data?.map((list) =>
           list.data.map((item) => (
             <div className={styles.item} key={item.mal_id}>
-              <Link href={`/detail/${item.mal_id}`}>
+              <Link href={session ? `/detail/${item.mal_id}` : "/forbidden"}>
                 <Image
                   style={{ borderRadius: 16 }}
                   height={325}
@@ -57,7 +80,9 @@ const Home = () => {
           ))
         )}
       </div>
-      {(isLoading || isValidating) && <Skeleton data-testid="loading" />}
+      {(isLoading || isValidating) && (
+        <Skeleton style={{ marginBlockEnd: 10 }} data-testid="loading" />
+      )}
       {hasNextPage && (
         <Row justify="center">
           <Col>
