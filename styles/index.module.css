@@ -1,0 +1,30 @@
+.main {
+  padding: 20px;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  margin-block-end: 10px;
+}
+
+.item {
+  margin-inline: auto;
+  margin-block-end: 10px;
+}
+
+@media only screen and (min-width: 768px) {
+  .itemList {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .item {
+    margin-inline: initial;
+  }
+}
+
+.itemDescription {
+  max-width: 225px;
+}
